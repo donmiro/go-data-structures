@@ -1,6 +1,7 @@
 package binarysearchtree
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -89,6 +90,32 @@ func (tree *BinarySearchTree) PostOrderTraverseTree(function func(int)) {
 	postOrderTraverseTree(tree.rootNode, function)
 }
 
+// SearchNode method:
+func (tree *BinarySearchTree) SearchNode(key int) bool {
+	tree.lock.RLock()
+	defer tree.lock.RUnlock()
+
+	return searchNode(tree.rootNode, key)
+}
+
+// RemoveNode method:
+func (tree *BinarySearchTree) RemoveNode(key int) {
+	tree.lock.Lock()
+	defer tree.lock.Unlock()
+
+	removeNode(tree.rootNode, key)
+}
+
+// String method:
+func (tree *BinarySearchTree) String() {
+	tree.lock.Lock()
+	defer tree.lock.Unlock()
+
+	fmt.Println("--------------------------------------")
+	stringify(tree.rootNode, 0)
+	fmt.Println("--------------------------------------")
+}
+
 // insertTreeNode function:
 func insertTreeNode(rootNode, newTreeNode *TreeNode) {
 	if newTreeNode.key < rootNode.key {
@@ -130,5 +157,77 @@ func postOrderTraverseTree(treeNode *TreeNode, function func(int)) {
 		postOrderTraverseTree(treeNode.leftNode, function)
 		postOrderTraverseTree(treeNode.rightNode, function)
 		function(treeNode.value)
+	}
+}
+
+// searckNode function:
+func searchNode(treeNode *TreeNode, key int) bool {
+	if treeNode == nil {
+		return false
+	}
+	if key < treeNode.key {
+		return searchNode(treeNode.leftNode, key)
+	}
+	if key > treeNode.key {
+		return searchNode(treeNode.rightNode, key)
+	}
+	return true
+}
+
+// removeNode function:
+func removeNode(treeNode *TreeNode, key int) *TreeNode {
+	if treeNode == nil {
+		return nil
+	}
+
+	if key < treeNode.key {
+		treeNode.leftNode = removeNode(treeNode.leftNode, key)
+		return treeNode
+	}
+
+	if key > treeNode.key {
+		treeNode.rightNode = removeNode(treeNode.rightNode, key)
+		return treeNode
+	}
+
+	// key = node.key
+	if treeNode.leftNode == nil && treeNode.rightNode == nil {
+		treeNode = nil
+		return nil
+	}
+	if treeNode.leftNode == nil {
+		treeNode = treeNode.rightNode
+		return treeNode
+	}
+	if treeNode.rightNode == nil {
+		treeNode = treeNode.leftNode
+		return treeNode
+	}
+	leftmostrightNode := treeNode.rightNode
+	for {
+		// find smallest value on the right side
+		if leftmostrightNode != nil && leftmostrightNode.leftNode != nil {
+			leftmostrightNode = leftmostrightNode.leftNode
+		} else {
+			break
+		}
+	}
+	treeNode.key, treeNode.value = leftmostrightNode.key, leftmostrightNode.value
+	treeNode.rightNode = removeNode(treeNode.rightNode, treeNode.key)
+	return treeNode
+}
+
+// Stringify function:
+func stringify(treeNode *TreeNode, level int) {
+	if treeNode != nil {
+		format := ""
+		for i := 0; i < level; i++ {
+			format += " "
+		}
+		format += "---[ "
+		level++
+		stringify(treeNode.leftNode, level)
+		fmt.Printf(format+"%d\n", treeNode.key)
+		stringify(treeNode.rightNode, level)
 	}
 }
